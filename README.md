@@ -4,56 +4,190 @@
 
 ---
 
-**PHASE 1** - Initial Observations:
+## 🔍 PHASE 1 – Initial Observations
 
-- Playing the gane the first time I startet with number 7 -> The hint was "Go lower." Then I entered 3, 2, 1 and the hint kept saying "Go lower" every time. Based on the prompt provided, we are supposed to guess a number between 1 and 100. However, even after entering "1" it told me to go lower, which shouldn't be the case.
-  => Most likely wrong logic -> Need to check how the logic is written when we enter the number that is lower or higher that the target number. Does it always say "Go lower"? Or does it say "Go lower" when it should say "Go higher"?
+When I ran the game for the first time, it was clearly not working correctly. Below are the main issues I noticed.
 
-- Every time I enter a wrong guess, my score went down by 5 points. So, after 5 attempts my score was -25.
-  => Potential bug: our score shouldn't go below 0 (unless intended to be negative)
+---
+
+### 🎯 1. Hint Logic Was Incorrect
+
+I started by guessing **7**, and the game told me:
+
+> “Go lower.”
+
+Then I guessed **3, 2, and even 1**, and it _still_ said “Go lower.”
+
+Since the range is supposed to be between 1 and 100, it makes no sense to keep saying “Go lower” after guessing 1.
+
+🧠 **Conclusion:**  
+The comparison logic inside `check_guess()` was likely reversed. The hint direction did not match the outcome.
+
+---
+
+### 📉 2. Score Went Negative
+
+Every time I guessed incorrectly, the score decreased by 5 points.  
+After several guesses, my score became **–25**.
+
+This may not technically be a bug, but it felt questionable from a game design perspective. Most games don’t allow negative scores unless it’s intentional.
+
+🧠 **Conclusion:**  
+Score behavior needed review to determine if negative scoring was intended.
+
+---
+
+### 🔢 3. Attempts Tracking Was Inconsistent
 
 ![alt text](image.png)
 
-By looking at the "Developer Debug Info," we can see that our history starts with attempt 0. It can confuse some players -> potentially needs to be changed to start with 1 instead.
+Using the **Developer Debug Info**, I noticed:
 
-After entering 7 guesses, it tells you that you are out of moves and prompts to start a new game. However, still shows 1 attempt left -> need to check the logic of tracking attempts and calculating the number of attempts left.
+- Attempts started at 0
+- The “attempts left” display didn’t always match reality
+- It sometimes said “Out of attempts” while still showing 1 attempt left
 
-After clicking on "New Game":
+🧠 **Conclusion:**  
+There was likely an off-by-one error in how attempts were initialized or incremented.
 
-- Secret number changed
-- Number of attempts changed to 8
-- Attempts (used) became 0
-- Score kept from the first game
-- History from all the previous attempts can be seen
+---
 
-When trying to guess a new number -> Kept saying "Game over. Start a new game to try again" and number of attempts available didn't change.
-=> Need to check logic where it supposed to restart the game.
+### 🔁 4. “New Game” Did Not Fully Reset
 
-Additional Observation:
+After clicking **New Game**, I observed:
 
-Easy level range: 1 - 20
-Normal level range: 1 - 100
-Hard level range: 1 - 50
+- ✅ Secret number changed
+- ❌ Score did not reset
+- ❌ History was not cleared
+- ❌ Game still said “Game over”
+- ❌ Attempts display was inconsistent
 
-It would make more sense if Normal and Hard levels ranges were switched.
+🧠 **Conclusion:**  
+The reset logic did not fully reinitialize session state.
 
-**PHASE 2** - Repairs
+---
 
-If we look at the code within app.py, we can see a few issues right away:
+### 🎚 5. Difficulty Levels Did Not Scale Logically
 
-1. get_range_for_difficulty() function includes ranges for different levels of difficulty that need to be fixed:
-   Normal range changed to 1 - 50
-   Hard level range changed to 1 - 100
+Original difficulty ranges:
 
-2. check_guess() function checks if our guess > secret
-   If it is -> Gives us a hint "Go Higher," otherwise says "Go Lower"
-   The logic is wrong -> I reversed it
+- Easy → 1–20
+- Normal → 1–100
+- Hard → 1–50
 
-**_HINTS for STUDENTS_**:
+This did not make logical sense.
 
-- Try entering range edges as your guesses (for example, 1 and 100) and check whether it keeps telling you to go Higher or Lower. Is it an appropriate behavior?
+I updated them to:
 
-- Try switching between levels of difficulty. Do the ranges make sense?
+- Easy → 1–20
+- Normal → 1–50
+- Hard → 1–100
+
+Now the difficulty increases progressively.
+
+---
+
+## 🛠 PHASE 2 – Repairs and Refactoring
+
+After identifying the main issues, I focused on fixing the core logic and improving structure.
+
+---
+
+### ✅ Fix 1 – Corrected Hint Direction
+
+In `check_guess()`:
+
+Originally, when `guess > secret`, the game returned a hint saying “Go Higher,” which is incorrect.
+
+I reversed the logic so now:
+
+- If guess is too high → Hint says **“Go Lower”**
+- If guess is too low → Hint says **“Go Higher”**
+
+This resolved the main gameplay issue.
+
+---
+
+### ✅ Fix 2 – Updated Difficulty Ranges
+
+I modified `get_range_for_difficulty()` to reflect logical scaling:
+
+- Normal → 1–50
+- Hard → 1–100
+
+This makes the levels progressively more challenging.
+
+---
+
+### ✅ Fix 3 – Refactored Logic Into `logic_utils.py`
+
+Originally, most of the game logic lived inside `app.py`.
+
+I moved the following functions into `logic_utils.py`:
+
+- `get_range_for_difficulty()`
+- `parse_guess()`
+- `check_guess()`
+- `update_score()`
+
+🧠 **Why?**
+
+- The test file imports from `logic_utils.py`
+- Pure logic functions are easier to test with `pytest`
+- Separating UI from logic makes the code cleaner and more maintainable
+
+---
+
+## 🤖 AI as a Teammate
+
+### ⚠️ Misleading Suggestion
+
+One AI suggestion was:
+
+> “Convert everything to string to avoid TypeError.”
+
+While this might prevent an error, it introduces incorrect comparison logic (string comparisons behave differently than numeric comparisons).
+
+I rejected this suggestion after thinking through the consequences.
+
+---
+
+### ✅ Helpful Suggestions
+
+AI helped me understand:
+
+- Why Streamlit reruns reset variables unless stored in `st.session_state`
+- Why logic should be separated from UI
+- Why `pytest` was failing even after fixing `app.py`
+
+These explanations helped guide the refactor and debugging process.
+
+---
+
+## 🧪 Testing and Verification
+
+To verify my fixes:
+
+- I manually tested edge values like **1** and **100**
+- I switched between difficulty levels to confirm ranges
+- I ran `pytest` to confirm that the updated logic passed the tests
+
+After these steps, the game behaved consistently and logically.
+
+---
+
+## 💡 Hints I Would Give Students
+
+- Try guessing edge numbers (1 or the maximum value). Does the hint direction make sense?
+- Switch difficulty levels and confirm the range changes properly.
+- Open **Developer Debug Info** and watch how session state changes after each action.
+- If something feels inconsistent, trace it step-by-step.
+
+---
+
+## 📘 PHASE 3 – Reflection
+
+All observations, fixes, and reflections were documented at the top of this README file instead of using reflection.md.
 
 ---
 
