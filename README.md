@@ -1,5 +1,7 @@
 # 🎮 Game Glitch Investigator: The Impossible Guesser
 
+<hr>
+
 ---
 
 **PHASE 1** - Initial Observations:
@@ -54,6 +56,8 @@ If we look at the code within app.py, we can see a few issues right away:
 - Try switching between levels of difficulty. Do the ranges make sense?
 
 ---
+
+<hr>
 
 ## 🚨 The Situation
 
