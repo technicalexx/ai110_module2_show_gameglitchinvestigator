@@ -47,7 +47,7 @@ If we look at the code within app.py, we can see a few issues right away:
    If it is -> Gives us a hint "Go Higher," otherwise says "Go Lower"
    The logic is wrong -> I reversed it
 
-HINTS for STUDENTS:
+**_HINTS for STUDENTS_**:
 
 - Try entering range edges as your guesses (for example, 1 and 100) and check whether it keeps telling you to go Higher or Lower. Is it an appropriate behavior?
 
